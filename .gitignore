@@ -1,0 +1,9 @@
+.idea
++.DS_Store*
+.pytest_cache
+__pycache__/
+*.rb
+.vscode
+CACHEDIR.TAG
+.venv/
+venv/
