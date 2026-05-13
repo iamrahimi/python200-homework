@@ -7,3 +7,4 @@ __pycache__/
 CACHEDIR.TAG
 .venv/
 venv/
+.env
