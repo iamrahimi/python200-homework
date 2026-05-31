@@ -7,13 +7,17 @@ from scipy.stats import pearsonr
 from smolagents import tool
 from typing import Dict, Union
 from smolagents import ToolCallingAgent, CodeAgent, OpenAIServerModel
+import os
 
 if load_dotenv():
     print("API key loaded successfully.")
 else:
     print("Warning: could not load API key. Check your .env file.")
-    
-client = OpenAI()
+
+# Get API key from environment
+api_key = os.getenv("OPENAI_API_KEY")
+
+client = OpenAI(api_key=api_key)
 # --- Lesson 02: Tool Definitions and the ReAct Loop ---
 
 # Q1

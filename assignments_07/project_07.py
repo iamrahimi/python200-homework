@@ -12,6 +12,8 @@ if load_dotenv():
 else:
     print("Warning: could not load API key. Check your .env file.")
     
+# Get API key from environment
+api_key = os.getenv("OPENAI_API_KEY")
 
 # Tool 1: load_happiness_data
 
@@ -188,6 +190,7 @@ def get_top_n_countries(column: str, year: int, n: int = 5) -> dict:
 # Create the model
 
 model = OpenAIServerModel(
+    api_key=api_key,
     model_id="gpt-4o-mini"
 )
 
