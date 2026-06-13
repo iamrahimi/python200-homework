@@ -77,7 +77,11 @@ A:- The cloud is usually not the best choice in two main situations:
 
 Azure Basics Question 2
   
-    By default, Azure Cloud Shell is ephemeral, which means any files, settings, or changes you make are temporary and can be lost when the session ends. 
+    By default, Azure Cloud Shell is ephemeral, which means that files, settings, and changes made during a session can be lost when the session ends.
+
+    In our course setup, Cloud Shell is configured to be persistent because it mounts an Azure Files share to the ~/clouddrive directory. Files stored in ~/clouddrive are saved in Azure Storage and remain available even after the Cloud Shell session is closed or restarted.
+
+    This allows us to keep our scripts, Git repositories, SSH keys, and other work between sessions without losing data.
 
 Azure Basics Question 3 
     SSH Private Key: A secret key that stays on your computer and should never be shared.
