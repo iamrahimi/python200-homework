@@ -115,8 +115,16 @@ def generate_cover_letter(job_title: str, background: str) -> str:
 
 
 # ============================================================
-# --- Task 4: Moderation ---
+
+# --- Task 4: Moderation Test Cases ---
+
 # ============================================================
+
+print("\n--- Moderation Tests ---")
+
+print("Safe input test:", is_safe("Hello, I need help with my resume"))
+
+print("Flagged input test:", is_safe("I want to harm someone"))
 
 def is_safe(text: str) -> bool:
     result = client.moderations.create(
