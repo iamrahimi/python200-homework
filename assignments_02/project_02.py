@@ -5,42 +5,78 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import numpy as np
 
-# -------------------------------------------------
-# Pre-processing Note
-# -------------------------------------------------
-# The CSV uses ';' as the delimiter instead of ','
-# so we pass sep=';' when loading the file
-df = pd.read_csv("assignments_02/student_performance_math.csv", sep=';')
+# The dataset uses semicolons (;) as separators instead of commas,
+# so we must specify sep=';' when loading the CSV file with pandas.
+df = pd.read_csv("assignments_02/student_performance_math.csv",sep=';')
+df = df.drop(columns=["G1", "G2"])
 
-df_original = df.copy()
+# print(df.head())
 
-# -------------------------------------------------
-# Task 1 – Load and Explore
-# -------------------------------------------------
+# Task 1: Load and Explore
+# Print shape
 print("Shape:", df.shape)
+
+# Print first five rows
 print(df.head())
+
+# Print data types
 print(df.dtypes)
 
+# Histogram of G3
 plt.figure()
+
 plt.hist(df["G3"], bins=21)
+
 plt.title("Distribution of Final Math Grades")
 plt.xlabel("Final Grade (G3)")
 plt.ylabel("Number of Students")
+
 plt.savefig("assignments_02/outputs/g3_distribution.png")
 plt.show()
 
-# Observation:
-# There is a strong spike at G3 = 0.
-# These represent missing or invalid exam results and are removed for modeling.
 
-# -------------------------------------------------
-# Task 2 – Preprocessing
-# -------------------------------------------------
-print("Shape before filtering:", df.shape)
+# Task 2: Preprocess the Data
 
+# 2. Remove invalid rows (G3 = 0)
 df = df[df["G3"] != 0]
 
-print("Shape after filtering:", df.shape)
+# 3. Convert categorical columns
+
+# Yes/No columns → 1/0
+yes_no_cols = ["schoolsup", "internet", "higher", "activities"]
+
+for col in yes_no_cols:
+    df[col] = df[col].map({"yes": 1, "no": 0})
+
+# Sex → 0/1
+df["sex"] = df["sex"].map({"F": 0, "M": 1})
+
+# 4. Define features and target
+X = df.drop(columns=["G3"])
+y = df["G3"]
+
+# 5. Train/test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 6. Train model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# 7. Predict
+y_pred = model.predict(X_test)
+
+# 8. Evaluate
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2 = model.score(X_test, y_test)
+
+print("RMSE:", rmse)
+print("R2:", r2)
+
+
+
+# Task 3: Exploratory Data Analysis
 
 yes_no_cols = ["schoolsup", "internet", "higher", "activities"]
 for col in yes_no_cols:
@@ -48,123 +84,123 @@ for col in yes_no_cols:
 
 df["sex"] = df["sex"].map({"F": 0, "M": 1})
 
-# -------------------------------------------------
-# Correlation Check (Original vs Filtered)
-# -------------------------------------------------
-corr_original = df_original["absences"].corr(df_original["G3"])
-corr_filtered = df["absences"].corr(df["G3"])
 
-print("Original correlation:", corr_original)
-print("Filtered correlation:", corr_filtered)
+# Correlation with G3
 
-# Observation:
-# Original correlation is distorted by G3=0 students.
-# After filtering, relationship becomes more realistic.
-
-# -------------------------------------------------
-# Task 3 – Exploratory Data Analysis
-# -------------------------------------------------
+# Select only numeric columns
 numeric_df = df.select_dtypes(include=[np.number])
+
+# Compute correlations with G3
 correlations = numeric_df.corr()["G3"].sort_values()
 
-print("\nCorrelations with G3:\n", correlations)
+print("Correlations with G3 (sorted):\n")
+print(correlations)
 
-# Strongest negative: failures
-# Strongest positive: studytime / Medu / Fedu
 
-# Plot 1
-plt.figure()
-plt.scatter(df["absences"], df["G3"])
-plt.title("Absences vs Final Grade")
-plt.xlabel("Absences")
-plt.ylabel("G3")
-plt.savefig("assignments_02/outputs/absences_vs_g3.png")
-plt.show()
+#Q4 
 
-# Observation:
-# More absences generally lead to lower grades.
-
-# Plot 2
-plt.figure()
-plt.scatter(df["studytime"], df["G3"])
-plt.title("Study Time vs Final Grade")
-plt.xlabel("Study Time")
-plt.ylabel("G3")
-plt.savefig("assignments_02/outputs/studytime_vs_g3.png")
-plt.show()
-
-# Observation:
-# More study time slightly improves grades, but not strongly linear.
-
-# -------------------------------------------------
-# Task 4 – Baseline Model
-# -------------------------------------------------
-X = df[["failures"]]
+# Feature and target
+X = df[["failures"]]   # must be 2D
 y = df["G3"]
 
+
+# Train/test split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-baseline_model = LinearRegression()
-baseline_model.fit(X_train, y_train)
+# Train model
+model = LinearRegression()
+model.fit(X_train, y_train)
 
-y_pred = baseline_model.predict(X_test)
+# Predictions
+y_pred = model.predict(X_test)
 
-baseline_r2 = baseline_model.score(X_test, y_test)
-rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 
-print("Slope:", baseline_model.coef_[0])
+# Metrics
+slope = model.coef_[0]
+rmse = np.sqrt(np.mean((y_pred - y_test) ** 2))
+r2 = model.score(X_test, y_test)
+
+print("Slope:", slope)
 print("RMSE:", rmse)
-print("R2:", baseline_r2)
+print("R2:", r2)
 
-# Interpretation:
-# Each failure reduces predicted grade significantly.
-# RMSE shows average prediction error (~2–3 grade points on a 0–20 scale).
 
-# -------------------------------------------------
-# Task 5 – Full Model (WITHOUT G1)
-# -------------------------------------------------
-feature_cols = [
-    "failures", "Medu", "Fedu", "studytime",
-    "higher", "schoolsup", "internet", "sex",
-    "freetime", "activities", "traveltime"
-]
+#Q5
+df = pd.read_csv("assignments_02/student_performance_math.csv", sep=";")
 
-X = df[feature_cols]
-y = df["G3"]
+df_clean = df[df["G3"] != 0].copy()
 
+# Convert yes/no safely BEFORE anything else
+yes_no_cols = ["schoolsup", "internet", "higher", "activities"]
+
+for col in yes_no_cols:
+    df_clean[col] = (
+        df_clean[col]
+        .astype(str)          # ensure string
+        .str.strip()          # remove spaces
+        .str.lower()          # make lowercase
+        .map({"yes": 1, "no": 0})
+    )
+
+# Convert sex
+df_clean["sex"] = (
+    df_clean["sex"]
+    .astype(str)
+    .str.strip()
+    .str.upper()
+    .map({"F": 0, "M": 1})
+)
+
+
+# Features and target
+feature_cols = ["failures", "Medu", "Fedu", "studytime", "higher", "schoolsup",
+                        "internet", "sex", "freetime", "activities", "traveltime", "G1"]
+
+df_clean = df_clean.dropna(subset=["G3"] + feature_cols)
+
+X = df_clean[feature_cols].values
+y = df_clean["G3"].values
+
+# Train/test split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-full_model = LinearRegression()
-full_model.fit(X_train, y_train)
+# Train model
+model = LinearRegression()
+model.fit(X_train, y_train)
 
-y_pred = full_model.predict(X_test)
+# Predictions
+y_pred = model.predict(X_test)
 
-train_r2 = full_model.score(X_train, y_train)
-test_r2 = full_model.score(X_test, y_test)
-rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+# Metrics
+train_r2 = model.score(X_train, y_train)
+test_r2 = model.score(X_test, y_test)
+rmse = np.sqrt(np.mean((y_pred - y_test) ** 2))
 
 print("Train R2:", train_r2)
 print("Test R2:", test_r2)
 print("RMSE:", rmse)
 
+# Coefficients
 print("\nFeature Coefficients:")
-for name, coef in zip(feature_cols, full_model.coef_):
+for name, coef in zip(feature_cols, model.coef_):
     print(f"{name:12s}: {coef:+.3f}")
 
-# Interpretation:
-# Multi-feature model improves performance over baseline.
-# Small coefficients suggest some features have limited predictive power.
 
-# -------------------------------------------------
-# Task 6 – Final Evaluation & Summary (FIXED WITH REAL VALUES)
-# -------------------------------------------------
+# Task 6: Evaluate and Summarize
+
+# Predictions (from your full model)
+y_pred = model.predict(X_test)
+
+# Plot
 plt.figure()
+
 plt.scatter(y_pred, y_test)
 
+# Diagonal line (perfect prediction)
 min_val = min(min(y_pred), min(y_test))
 max_val = max(max(y_pred), max(y_test))
 plt.plot([min_val, max_val], [min_val, max_val])
@@ -175,54 +211,3 @@ plt.ylabel("Actual G3")
 
 plt.savefig("assignments_02/outputs/predicted_vs_actual.png")
 plt.show()
-
-# -------------------------------------------------
-# FINAL SUMMARY (REAL VALUES INCLUDED)
-# -------------------------------------------------
-
-# Filtered dataset size:
-# After removing G3 = 0 rows, dataset contains 382 rows.
-# Test set size: 77 rows (20% split)
-
-# Model performance:
-# RMSE ≈ 2.6 → predictions are off by about 2–3 grade points on a 0–20 scale.
-# R² ≈ 0.34 → model explains ~34% of variation in student performance.
-
-# Feature importance:
-# Largest positive coefficient: studytime (~ +0.8)
-# → More study time increases predicted performance.
-
-# Largest negative coefficient: failures (~ -2.4)
-# → More failures strongly decrease predicted grades.
-
-# Interpretation:
-# Academic history variables are much more important than social variables.
-
-# Surprising result:
-# freetime had almost no impact on G3, even though it might be expected to matter.
-
-# -------------------------------------------------
-# Task 7 – Add G1 Feature (Final Step)
-# -------------------------------------------------
-feature_cols_g1 = feature_cols + ["G1"]
-
-X = df[feature_cols_g1]
-y = df["G3"]
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
-
-g1_model = LinearRegression()
-g1_model.fit(X_train, y_train)
-
-y_pred = g1_model.predict(X_test)
-
-g1_r2 = g1_model.score(X_test, y_test)
-
-print("\nTest R2 with G1:", g1_r2)
-
-# Interpretation:
-# G1 greatly improves prediction because it is highly correlated with final grade.
-# This reflects correlation, not causation.
-# It is useful for early intervention after first exam results.
