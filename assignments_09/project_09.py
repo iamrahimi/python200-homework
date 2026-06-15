@@ -103,8 +103,8 @@ def read_back(container_client, blob_path):
     # -------------------------
     # Step 2: Save raw JSON locally
     # -------------------------
-    os.makedirs("outputs", exist_ok=True)
-    with open("outputs/weather_raw.json", "wb") as f:
+    os.makedirs("assignments_09/outputs", exist_ok=True)
+    with open("assignments_09/outputs/weather_raw.json", "wb") as f:
         f.write(download_data)
     # -------------------------
     # Step 3: Parse JSON
