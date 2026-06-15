@@ -127,3 +127,6 @@ if __name__ == "__main__":
     verify_upload(container_client)
     read_back(container_client, f"raw/{date.today().isoformat()}/weather.json")
     print("Pipeline finished successfully")
+
+
+# Video link https://youtu.be/VY-twBiwHYY
