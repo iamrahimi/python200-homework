@@ -5,6 +5,8 @@ from datetime import date
 import os
 import pandas as pd
 
+# Video link https://youtu.be/VY-twBiwHYY
+
 # ----------------------------
 # Setup constants
 # ----------------------------
@@ -129,4 +131,3 @@ if __name__ == "__main__":
     print("Pipeline finished successfully")
 
 
-# Video link https://youtu.be/VY-twBiwHYY
