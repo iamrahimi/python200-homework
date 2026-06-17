@@ -1,15 +1,15 @@
+# Step 6: Reflect
 """
 Reflection:
 
-Using an LLM to classify weather for running is convenient but not strictly necessary. 
-A deterministic rule-based approach (e.g., temperature and precipitation thresholds) would likely be faster, cheaper, and fully consistent. 
-The LLM adds flexibility for more nuanced interpretations (like combining conditions in non-linear ways), but it also introduces variability and cost. 
-In this case, I would prefer a rule-based system unless the definition of "good running weather" becomes more subjective or complex.
+Using an LLM to classify weather conditions for outdoor running was useful, but it may not be necessary for this task. 
+Since the weather data already includes temperature and precipitation values, a rule-based approach could make the same decisions more quickly and consistently. 
+The advantage of using an LLM is that it can provide more flexible and human-like reasoning when evaluating conditions. However, a rule-based solution would be simpler, easier to understand, and less expensive to run.
 """
+
 
 import json
 import os
-from datetime import datetime
 from datetime import date
 from azure.storage.blob import BlobServiceClient
 from openai import OpenAI
@@ -19,6 +19,8 @@ import pandas as pd
 load_dotenv()
 client = OpenAI()
 api_key = os.getenv("OPENAI_API_KEY")
+
+video_url = "https://youtu.be/cUepRRf1mds"
 
 # ======================
 # Constants
@@ -53,23 +55,33 @@ SYSTEM_PROMPT = (
 def read_back(container_client, blob_path):
 
     """
-    Download blob, save locally, parse JSON,
-    and reshape hourly data into records.
+    Download blob, save locally, parse JSON, and reshape hourly data into records.
     """
+    try:
+        # Try Azure blob first
+        blob_client = container_client.get_blob_client(blob_path)
+        if not blob_client.exists():
+            raise FileNotFoundError(f"Blob {blob_path} not found")
+        
+        download_data = blob_client.download_blob().readall()
+        os.makedirs("assignments_09/outputs", exist_ok=True)
 
-    # Step 1: Download blob
-    blob_client = container_client.get_blob_client(blob_path)
-    download_data = blob_client.download_blob().readall()
+        with open("assignments_09/outputs/weather.json", "wb") as f:
+            f.write(download_data)
+        weather_json = json.loads(download_data.decode("utf-8"))
+        print("Loaded weather data from Azure Blob Storage.")
 
-    # Step 2: Save raw JSON locally
-    os.makedirs("assignments_09/outputs", exist_ok=True)
-    with open("assignments_09/outputs/weather.json", "wb") as f:
-        f.write(download_data)
+    except Exception as e:
+        print(f"Could not load blob: {e}")
+        print("Using fallback dataset.")
 
-    # Step 3: Parse JSON
-    weather_json = json.loads(download_data.decode("utf-8"))
-
-    # Step 4: Reshape hourly data
+        with open(
+            "assignments/resources/weather_raw.json",
+            "r",
+            encoding="utf-8"
+        ) as f:
+            weather_json = json.load(f)
+    # Reshape hourly data
     hourly = weather_json["hourly"]
     weather_records = [
         {
@@ -78,11 +90,8 @@ def read_back(container_client, blob_path):
             "precipitation": hourly["precipitation"][i]
         }
         for i in range(len(hourly["time"]))
-
     ]
-
     print(f"Loaded {len(weather_records)} weather records.")
-
     return weather_records
 
 # Step 2: Transform
@@ -181,14 +190,7 @@ def save_first_10_records(classified_records):
     print("Saved outputs/first_10_records.json")
 
 
-# Step 6: Reflect
-"""
-Reflection:
 
-Using an LLM to classify weather conditions for outdoor running was useful, but it may not be necessary for this task. 
-Since the weather data already includes temperature and precipitation values, a rule-based approach could make the same decisions more quickly and consistently. 
-The advantage of using an LLM is that it can provide more flexible and human-like reasoning when evaluating conditions. However, a rule-based solution would be simpler, easier to understand, and less expensive to run.
-"""
 
 def main():
 
