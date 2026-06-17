@@ -20,7 +20,7 @@ load_dotenv()
 client = OpenAI()
 api_key = os.getenv("OPENAI_API_KEY")
 
-video_url = "https://youtu.be/cUepRRf1mds"
+# video_url = "https://youtu.be/cUepRRf1mds"
 
 # ======================
 # Constants
@@ -64,8 +64,7 @@ def read_back(container_client, blob_path):
             raise FileNotFoundError(f"Blob {blob_path} not found")
         
         download_data = blob_client.download_blob().readall()
-        os.makedirs("assignments_09/outputs", exist_ok=True)
-
+        
         with open("assignments_09/outputs/weather.json", "wb") as f:
             f.write(download_data)
         weather_json = json.loads(download_data.decode("utf-8"))
