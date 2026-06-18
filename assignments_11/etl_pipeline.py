@@ -7,6 +7,7 @@ from openai import OpenAI
 from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
 
+# video_url https://youtu.be/CLVhRGqhDZU
 
 # =========================
 # OPENAI CLIENT
@@ -138,6 +139,7 @@ def load_task(records: list):
 
     byte_count = len(data.encode("utf-8"))
     print(f"Load: uploaded to {blob_path}, bytes={byte_count}")
+
     return blob_path
 
 
