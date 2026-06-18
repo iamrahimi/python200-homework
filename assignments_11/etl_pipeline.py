@@ -130,13 +130,14 @@ def load_task(records: list):
     today = date.today().isoformat()
     blob_path = f"final/{today}/weather_etl.json"
     blob_client = container_client.get_blob_client(blob_path)
+    data = json.dumps(records, indent=2)
     blob_client.upload_blob(
-        json.dumps(records, indent=2),
+        data,
         overwrite=True
     )
 
-    print(f"Uploaded {blob_path}")
-    print("Blob exists:", blob_client.exists())
+    byte_count = len(data.encode("utf-8"))
+    print(f"Load: uploaded to {blob_path}, bytes={byte_count}")
     return blob_path
 
 
