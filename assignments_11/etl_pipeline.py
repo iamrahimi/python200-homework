@@ -137,6 +137,7 @@ def load_task(records: list):
 
     print(f"Uploaded {blob_path}")
     print("Blob exists:", blob_client.exists())
+    return blob_path
 
 
 # =========================
