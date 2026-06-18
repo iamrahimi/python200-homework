@@ -12,7 +12,11 @@ A simple helper function like converting Celsius to Fahrenheit is a pure in-memo
 # =========================
 # Decorator line only:
 """
-@task(retries=3, retry_delay_seconds=30)
+@task(name="call_api", retries=3, retry_delay_seconds=30)
+def call_api():
+    response = requests.get("https://api.example.com")
+    response.raise_for_status()
+    return response.json()
 """
 
 
