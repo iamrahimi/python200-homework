@@ -1,216 +1,193 @@
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.cluster import KMeans
-from sklearn.datasets import make_blobs
-import matplotlib.pyplot as plt
 import os
-from sklearn.model_selection import train_test_split
+import torch
+import torchvision
+from torchvision import models
+from torchvision.models import ResNet18_Weights
+from PIL import Image
+import matplotlib.pyplot as plt
+import numpy as np
+import random
+from pathlib import Path
+import torch.nn.functional as F
 
-# --- scikit-learn API ---
-# Q1
-
-
-# Data
-years  = np.array([1, 2, 3, 5, 7, 10]).reshape(-1, 1)
-salary = np.array([45000, 50000, 60000, 75000, 90000, 120000])
-
-# Step 1: Create model
-model = LinearRegression()
-
-# Step 2: Fit model
-model.fit(years, salary)
-
-# Step 3: Predict
-pred_4_years = model.predict([[4]])
-pred_8_years = model.predict([[8]])
-
-# Outputs
-print("Slope (Coefficient):", model.coef_[0])
-print("Intercept:", model.intercept_)
-print("Predicted salary for 4 years:", pred_4_years[0])
-print("Predicted salary for 8 years:", pred_8_years[0])
-
-
-# Q2
-
-# 1D array (single feature)
-x = np.array([10, 20, 30, 40, 50])
-
-# Print original shape
-print("Original shape:", x.shape)
-
-# Convert to 2D array (required for scikit-learn)
-x_2d = x.reshape(-1, 1)
-
-# Print new shape
-print("New shape:", x_2d.shape)
-
-
-# Q3
-
-# Generate synthetic dataset
-X_clusters, _ = make_blobs(
-    n_samples=120,
-    centers=3,
-    cluster_std=0.8,
-    random_state=7
-)
-
-# Create KMeans model
-kmeans = KMeans(n_clusters=3, random_state=42)
-
-# Fit the model
-kmeans.fit(X_clusters)
-
-# Predict cluster labels
-labels = kmeans.labels_
-
-# Print cluster centers
-print("Cluster Centers:\n", kmeans.cluster_centers_)
-
-# Count points in each cluster
-print("Points per cluster:", np.bincount(labels))
-
-# Plot the clusters
-plt.figure()
-
-plt.scatter(X_clusters[:, 0], X_clusters[:, 1], c=labels, cmap="viridis")
-plt.scatter(
-    kmeans.cluster_centers_[:, 0],
-    kmeans.cluster_centers_[:, 1],
-    c="black",
-    marker="X",
-    s=200,
-    label="Centers"
-)
-
-plt.title("K-Means Clustering (3 Clusters)")
-plt.xlabel("Feature 1")
-plt.ylabel("Feature 2")
-plt.legend()
-
-# Save figure
-plt.savefig("assignments_02/outputs/kmeans_clusters.png")
-
-plt.show()
-
-# --- Linear Regression API ---
-
-np.random.seed(42)
-
-num_patients = 100
-
-age = np.random.randint(20, 65, num_patients).astype(float)
-smoker = np.random.randint(0, 2, num_patients).astype(float)
-
-cost = 200 * age + 15000 * smoker + np.random.normal(0, 3000, num_patients)
-
-# Q1
-
-# Make sure output folder exists
+# --------------------
+# Setup
+# --------------------
 os.makedirs("outputs", exist_ok=True)
 
-# Scatter plot: Age vs Cost, colored by smoker status
-plt.figure()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-plt.scatter(age, cost, c=smoker, cmap="coolwarm")
+print("Device:", device)
+print("Torch:", torch.__version__)
+print("TorchVision:", torchvision.__version__)
 
-plt.title("Medical Cost vs Age")
-plt.xlabel("Age")
-plt.ylabel("Cost")
+# --------------------
+# PyTorch Tensors
+# --------------------
 
-plt.savefig("assignments_02/outputs/cost_vs_age.png")
-plt.show()
+# Q1
+a = torch.tensor([[1.0, 2.0, 3.0],
+                  [4.0, 5.0, 6.0]])
+
+b = torch.zeros(2, 3)
+c = torch.ones(4)
+
+print("\n--- Q1 ---")
+for name, t in [("a", a), ("b", b), ("c", c)]:
+    print(f"\n{name}")
+    print("value:\n", t)
+    print("shape:", t.shape)
+    print("dtype:", t.dtype)
+    print("device:", t.device)
 
 # Q2
+x = torch.tensor([1.0, 4.0, 9.0, 16.0, 25.0])
 
-# Use age as the only feature (must be 2D for scikit-learn)
-X = age.reshape(-1, 1)
-y = cost
-
-# Split into training and testing sets (80/20 split)
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
-
-# Print shapes
-print("X_train shape:", X_train.shape)
-print("X_test shape:", X_test.shape)
-print("y_train shape:", y_train.shape)
-print("y_test shape:", y_test.shape)
-
+print("\n--- Q2 ---")
+print("sqrt:", torch.sqrt(x))
+print("sum:", x.sum())
+print("mean:", x.mean())
+print("argmax:", x.argmax())
 
 # Q3
+print("\n--- Q3 ---")
+a_gpu = a.to(device)
+print("a_gpu device:", a_gpu.device)
 
-# Create and fit the model
-model = LinearRegression()
-model.fit(X_train, y_train)
+a_back = a_gpu.cpu()
+a_numpy = a_back.numpy()
 
-# Slope and intercept
-slope = model.coef_[0]
-intercept = model.intercept_
-
-print("Slope:", slope)
-print("Intercept:", intercept)
-
-# Predictions on test set
-y_pred = model.predict(X_test)
-
-# RMSE
-rmse = np.sqrt(np.mean((y_pred - y_test) ** 2))
-print("RMSE:", rmse)
-
-# R2 score
-r2 = model.score(X_test, y_test)
-print("R2:", r2)
+print("numpy type:", type(a_numpy))
+print("numpy values:\n", a_numpy)
 
 # Q4
+print("\n--- Q4 ---")
+t = torch.arange(24).float()
 
-# Combine features (age + smoker)
-X_full = np.column_stack([age, smoker])
-y = cost
+print("reshape (4,6):", t.reshape(4, 6).shape)
+print("reshape (2,3,4):", t.reshape(2, 3, 4).shape)
 
-# Split data (same 80/20 split)
-X_train, X_test, y_train, y_test = train_test_split(
-    X_full, y, test_size=0.2, random_state=42
-)
-
-# Fit model
-model_full = LinearRegression()
-model_full.fit(X_train, y_train)
-
-# Predictions
-y_pred_full = model_full.predict(X_test)
-
-# R2 score
-r2_full = model_full.score(X_test, y_test)
-print("R2 with age + smoker:", r2_full)
-
-# Coefficients
-print("age coefficient:    ", model_full.coef_[0])
-print("smoker coefficient: ", model_full.coef_[1])
+t_batch = t.reshape(4, 6).unsqueeze(0)
+print("add batch dim:", t_batch.shape)
 
 # Q5
+print("\n--- Q5 ---")
+np_a = np.array([[1.0, 2.0], [3.0, 4.0]])
+np_b = np.array([[5.0, 6.0], [7.0, 8.0]])
 
-# Predictions from the full model (age + smoker)
-y_pred_full = model_full.predict(X_test)
+t_a = torch.tensor(np_a, dtype=torch.float32)
+t_b = torch.tensor(np_b, dtype=torch.float32)
 
-# Create plot
-plt.figure()
+print("NumPy:\n", np.dot(np_a, np_b))
+print("Torch:\n", torch.matmul(t_a, t_b))
 
-# Scatter: predicted vs actual
-plt.scatter(y_pred_full, y_test)
+# --------------------
+# Pretrained Model
+# --------------------
 
-# Diagonal reference line (perfect predictions)
-min_val = min(min(y_pred_full), min(y_test))
-max_val = max(max(y_pred_full), max(y_test))
-plt.plot([min_val, max_val], [min_val, max_val], color="red")
+weights = ResNet18_Weights.DEFAULT
+model = models.resnet18(weights=weights)
 
-# Labels and title
-plt.title("Predicted vs Actual")
-plt.xlabel("Predicted Cost")
-plt.ylabel("Actual Cost")
+print("\n--- Model Q1 ---")
+print("Total params:", sum(p.numel() for p in model.parameters()))
+print("Trainable:", sum(p.numel() for p in model.parameters() if p.requires_grad))
 
-# Save figure
-plt.savefig("assignments_02/outputs/predicted_vs_actual.png")
+print("\n--- Model Q2 ---")
+print(model)
+
+model = model.to(device)
+model.eval()
+
+print("\n--- Model Q3 ---")
+print("Model ready on device")
+
+preprocess = weights.transforms()
+
+print("\n--- Model Q4 ---")
+print(preprocess)
+
+# --------------------
+# Dataset Setup
+# --------------------
+
+DATA_DIR = Path("/kaggle/input/intel-image-classification/seg_test/seg_test")
+
+LABELS = ["buildings", "forest", "glacier", "mountain", "sea", "street"]
+
+imagenet_classes = weights.meta["categories"]
+
+def load_sample_image(label):
+    class_dir = DATA_DIR / label
+    img_path = random.choice(list(class_dir.glob("*.jpg")))
+    return Image.open(img_path).convert("RGB"), img_path.name
+
+# --------------------
+# Inference Function
+# --------------------
+
+def get_top5_predictions(model, preprocess, image, device, class_labels):
+    img = preprocess(image).unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        out = model(img)
+
+    probs = F.softmax(out[0], dim=0)
+
+    top_probs, top_idx = torch.topk(probs, 5)
+
+    return [(class_labels[i], float(p)) for p, i in zip(top_probs, top_idx)]
+
+# --------------------
+# Inference Tests
+# --------------------
+
+print("\n--- Inference Q1 ---")
+img, name = load_sample_image("mountain")
+preds = get_top5_predictions(model, preprocess, img, device, imagenet_classes)
+
+print(name)
+for c, p in preds:
+    print(c, p)
+
+print("\n--- Inference Q2 ---")
+for label in LABELS:
+    img, name = load_sample_image(label)
+    preds = get_top5_predictions(model, preprocess, img, device, imagenet_classes)[:3]
+
+    print("\n", label, name)
+    for c, p in preds:
+        print(c, p)
+
+print("\n--- Inference Q3 ---")
+img, _ = load_sample_image("forest")
+x = preprocess(img).unsqueeze(0).to(device)
+
+with torch.no_grad():
+    logits = model(x)
+
+probs = F.softmax(logits[0], dim=0)
+
+print("logits range:", logits.min().item(), logits.max().item())
+print("prob sum:", probs.sum().item())
+print("top:", imagenet_classes[probs.argmax().item()])
+
+# --------------------
+# Visualization (Q4)
+# --------------------
+
+img, _ = load_sample_image("mountain")
+preds = get_top5_predictions(model, preprocess, img, device, imagenet_classes)
+
+labels = [p[0] for p in preds]
+values = [p[1] for p in preds]
+
+fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+
+ax[0].imshow(img)
+ax[0].axis("off")
+
+ax[1].barh(labels[::-1], values[::-1])
+
+plt.tight_layout()
+plt.savefig("outputs/warmup_inference_viz.png")
 plt.show()
