@@ -13,14 +13,16 @@ Scenario A
 VM: Standard_B1s
 Hours: 160/month
 Region: East US
+Estimated Cost: $1.66per month
 Summary: Low-cost development workload
 
 Scenario B
 
-VM: Standard_NC6s_v3 GPU
+VM: Standard_NC6s_v3 (GPU)
 Hours: 730/month
 SQL Database: 4 vCores
 Blob Storage: 1 TB
+Estimated Cost: $1511 per month
 Summary: High-cost production analytics system
 
 Observations

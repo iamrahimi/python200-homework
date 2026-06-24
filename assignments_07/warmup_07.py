@@ -547,37 +547,40 @@ print(compute_correlation.description)
 #Q8
 
 # Model
+# 1. Initialize the shared model and tools
+# (Assumes compute_correlation and other lesson tools are already defined in your environment)
+shared_tools = [compute_correlation] 
+
 model = OpenAIServerModel(
-    model_id="gpt-4.1-mini"
+    model_id="gpt-4o-mini",
+    api_key=os.getenv("OPENAI_API_KEY")
 )
 
-# ToolCallingAgent
+# 2. Create the ToolCallingAgent
 tool_agent = ToolCallingAgent(
-    tools=[compute_correlation],
+    tools=shared_tools,
     model=model
 )
 
-# CodeAgent
+# 3. Create the CodeAgent
 code_agent = CodeAgent(
-    tools=[compute_correlation],
+    tools=shared_tools,
     model=model
 )
 
-# Prompt
-
+# 4. Execute the prompt on both agents
 prompt = "Load bike_commute.csv. Plot avg_heart_rate vs duration_min as a scatter plot with green dots."
 
-# Run both agents
-
+print("--- Running ToolCallingAgent ---")
 response_tool = tool_agent.run(prompt)
-response_code = code_agent.run(
-    prompt,
-    additional_args={"csv_manager": csv_manager}
-)
-print("ToolCallingAgent Response:")
-print(response_tool)
-print("\nCodeAgent Response:")
-print(response_code)
+print("\nToolCallingAgent Final Response:\n", response_tool)
+
+print("\n" + "="*50 + "\n")
+
+print("--- Running CodeAgent ---")
+# Passing the csv_manager if your environment uses it to track stateful dataframes
+response_code = code_agent.run(prompt, additional_args={"csv_manager": csv_manager})
+print("\nCodeAgent Final Response:\n", response_code)
 
 # Analysis
 
