@@ -5,7 +5,7 @@ from smolagents import tool
 from scipy.stats import pearsonr
 from smolagents import CodeAgent, OpenAIServerModel
 from dotenv import load_dotenv
-
+ 
 
 if load_dotenv():
     print("API key loaded successfully.")
@@ -196,25 +196,15 @@ model = OpenAIServerModel(
 
 # System prompt
 SYSTEM_PROMPT = """
-You are a data analyst assistant for the World Happiness dataset.
-IMPORTANT:
-- load_happiness_data returns a dictionary, NOT a dataframe.
-- happiness_data only contains:
-    data["shape"]
-    data["columns"]
-- NEVER use:
-    happiness_data.shape
-    happiness_data['GDP per capita']
-- The real dataframe is stored in the global variable df.
-- Use df['column_name'] for dataframe operations.
-Use the available tools for:
-- loading data
-- summarizing columns
-- computing correlations
-- ranking countries
-Write Python code directly only when the tools are not sufficient.
-Be concise and student-friendly in your responses.
-"""
+    You are a data analyst assistant for the World Happiness dataset.
+    Use the available tools for:
+    - loading data
+    - summarizing columns
+    - computing correlations
+    - ranking countries
+    Write Python code only when necessary, and prefer using tools first.
+    Be concise and explain results clearly.
+    """
 # Create the CodeAgent
 agent = CodeAgent(
     tools=[
@@ -235,22 +225,41 @@ agent = CodeAgent(
 
 
 # Task 3: Run Guided Queries
-queries = [
-    "Load the happiness data and tell me its shape and column names.",
-    "Then summarize the 'Happiness score' column.",
-    "What is the correlation between 'GDP per capita' and 'Happiness score'?",
-    "Show me the top 5 happiest countries in 2020 ranked by 'Happiness score'.",
-    "Plot 'Happiness score' over years by 'Regional indicator'.",
-]
+if __name__ == "__main__":
 
-# Run queries sequentially while preserving conversation memory
-for query in queries:
-    print(f"\n--- Query: {query} ---")
-    response = agent.run(
-        query,
-        reset=False
-    )
-    print(response)
+    queries = [
+        "Load the happiness data and tell me its shape and column names.",
+        "Then summarize the 'Happiness score' column.",
+        "What is the correlation between 'GDP per capita' and 'Happiness score'?",
+        "Show me the top 5 happiest countries in 2020 ranked by 'Happiness score'.",
+        "Plot 'Happiness score' over years by 'Regional indicator'.",
+    ]
+
+    # Run queries sequentially while preserving conversation memory
+    for query in queries:
+        print(f"\n--- Query: {query} ---")
+        response = agent.run(
+            query,
+            reset=False
+        )
+        print(response)
+
+    # =========================
+    # Task 4: Custom Queries
+    # =========================
+    custom_queries = [
+        "What is the average Happiness score by region?",
+        "Compare GDP per capita and Life Ladder correlation for 2019."
+    ]
+
+    for query in custom_queries:
+        print(f"\n--- Custom Query: {query} ---")
+        response = agent.run(query, reset=False)
+        print(response)
+
+    # Note:
+    # These queries may trigger a mix of tool usage (summarization/correlation tools)
+    # and direct Python code if aggregation or plotting is required.
 
 # Verification Note
 
@@ -265,3 +274,19 @@ for query in queries:
 # If the file was successfully created, then the
 # agent correctly switched from tool usage to
 # direct Python code generation.
+
+
+
+# =========================
+# Task 5: Reflection
+# =========================
+# 1. The agent successfully used tools like load_happiness_data,
+#    summarize_column, and compute_correlation for structured queries.
+#
+# 2. When tools were insufficient (e.g., plotting trends or grouped analysis),
+#    the agent generated Python code using pandas and matplotlib.
+#
+# 3. The hybrid approach (tools + code generation) is effective because:
+#    - tools ensure correctness for common operations
+#    - code generation provides flexibility for complex analysis
+#    - together they allow both reliability and adaptability

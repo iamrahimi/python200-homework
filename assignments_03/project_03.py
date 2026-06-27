@@ -34,7 +34,7 @@ df = pd.read_csv("assignments_03/spambase.data", header=None)
 df.columns = columns
 
 print(df.shape)
-df.head()
+print(df.head())
 
 # 2. Basic Exploration
 print("Total emails:", df.shape[0])
@@ -183,6 +183,13 @@ evaluate_model(
     X_train, X_test, y_train, y_test
 )
 
+knn_unscaled = KNeighborsClassifier(n_neighbors=5)
+cv_scores_unscaled = cross_val_score(knn_unscaled, X_train, y_train, cv=5)
+print("\nKNN (Unscaled) Cross-Validation")
+print("Fold scores:", cv_scores_unscaled)
+print(f"Mean CV Accuracy: {cv_scores_unscaled.mean():.4f}")
+print(f"Standard Deviation: {cv_scores_unscaled.std():.4f}")
+
 # Scaled
 evaluate_model(
     "KNN (scaled)",
@@ -294,9 +301,9 @@ plt.close()
 # Decision Tree:
 # As max_depth increases, training accuracy continues to improve,
 # but test accuracy eventually stops improving or begins to decrease.
-# This is evidence of overfitting. A depth around 10 provides a good
-# balance between model complexity and generalization, so it is a
-# reasonable choice for production.
+# This indicates overfitting at higher depths. Based on my results,
+# I chose max_depth=5 because it provides a good balance between
+# model complexity and generalization while avoiding unnecessary overfitting.
 
 # KNN:
 # Scaling generally improves KNN because distance calculations are
@@ -384,31 +391,20 @@ cross_validate_model(
 
 #Task 5: Building a Prediction Pipeline
 
-
 rf_pipeline = Pipeline([
     ("classifier", RandomForestClassifier(n_estimators=100, random_state=42))
 ])
 
 rf_pipeline.fit(X_train, y_train)
-
 y_pred_rf = rf_pipeline.predict(X_test)
 
 print("\nRandom Forest Pipeline")
 print(classification_report(y_test, y_pred_rf))
 
-
-rf_pipeline = Pipeline([
-    ("classifier", RandomForestClassifier(n_estimators=100, random_state=42))
-])
-
-rf_pipeline.fit(X_train, y_train)
-
-y_pred_rf = rf_pipeline.predict(X_test)
-
-print("\nRandom Forest Pipeline")
-print(classification_report(y_test, y_pred_rf))
-
-
+# Random Forest Pipeline:
+# This model does not require scaling or PCA because it is tree-based.
+# It splits data using thresholds, so feature magnitude does not affect performance.
+# This makes it simpler and more robust compared to linear or distance-based models.
 
 lr_pipeline = Pipeline([
     ("scaler", StandardScaler()),
@@ -416,11 +412,14 @@ lr_pipeline = Pipeline([
 ])
 
 lr_pipeline.fit(X_train, y_train)
-
 y_pred_lr = lr_pipeline.predict(X_test)
 
 print("\nLogistic Regression Pipeline (Scaled)")
 print(classification_report(y_test, y_pred_lr))
+
+# Logistic Regression (Scaled):
+# Scaling is required because logistic regression is sensitive to feature magnitude.
+# Without scaling, large-valued features would dominate the model and reduce performance.
 
 lr_pca_pipeline = Pipeline([
     ("scaler", StandardScaler()),
@@ -434,4 +433,49 @@ y_pred_lr_pca = lr_pca_pipeline.predict(X_test)
 
 print("\nLogistic Regression Pipeline (PCA)")
 print(classification_report(y_test, y_pred_lr_pca))
+
+# Logistic Regression (PCA):
+# This pipeline reduces dimensionality before classification.
+# PCA helps remove noise and redundancy, but may also drop useful information.
+# It works best when features are highly correlated.
+
+
+#
+# Both the Decision Tree and Random Forest highlight similar key features,
+# especially those related to capital_run_length_total, word frequency features,
+# and certain character frequency indicators.
+#
+# The Random Forest is generally more stable and shows a more reliable ranking,
+# while the Decision Tree can be more sensitive to individual splits.
+#
+# Overall, the most important features align well with intuition about spam:
+# - High capital letter usage is a strong spam indicator ("SHOUTING" emails)
+# - Certain word frequencies (like promotional or spam-trigger words) are predictive
+# - Character frequency features (like '!') also help identify spam patterns
+#
+# This confirms that spam emails often differ from ham emails in formatting style
+# and aggressive textual patterns, not just content alone.
+
+
+# Pipeline Structure & Practical Value:
+#
+# The structure of each pipeline reflects the requirements of the model.
+# Tree-based models like Random Forest do not require scaling or PCA,
+# so their pipeline only includes the classifier step.
+#
+# In contrast, Logistic Regression depends on feature magnitude, so
+# scaling is applied before training. In the PCA version, dimensionality
+# reduction is added after scaling to improve efficiency and reduce noise.
+#
+# The order of steps is important because preprocessing must happen
+# before model training, ensuring the model receives correctly transformed data.
+#
+# Using a Pipeline is practically valuable because it:
+# - Prevents data leakage by ensuring preprocessing is learned only from training data
+# - Guarantees consistent transformations during both training and testing
+# - Simplifies deployment by bundling all steps into a single reusable object
+# - Makes the workflow easier to share, reproduce, and maintain
+#
+# Overall, pipelines reduce errors and make machine learning workflows more robust
+# and production-ready.
 

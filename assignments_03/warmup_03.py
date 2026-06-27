@@ -57,24 +57,21 @@ print(X_train_scaled.mean(axis=0))
 knn = KNeighborsClassifier(n_neighbors=5)
 knn.fit(X_train, y_train)
 
-y_pred = knn.predict(X_test)
+y_pred_unscaled = knn.predict(X_test)
 
 print("\nKNN Q1: Unscaled Data")
-print("Accuracy:", accuracy_score(y_test, y_pred))
-print("Classification Report:\n", classification_report(y_test, y_pred))
+print("Accuracy:", accuracy_score(y_test, y_pred_unscaled))
+print("Classification Report:\n", classification_report(y_test, y_pred_unscaled))
 
 
 # Q2: KNN with scaling
-# Initialize the KNN classifier (assuming k=5 or matching your previous Question 1 setup)
+# Q2: KNN with scaling
 knn = KNeighborsClassifier(n_neighbors=5)
-
-# Fit the model on the scaled training data and predict on scaled test data
 knn.fit(X_train_scaled, y_train)
-y_pred = knn.predict(X_test_scaled)
 
-# Calculate and print the accuracy
-accuracy = accuracy_score(y_test, y_pred)
-print(f"KNN Accuracy with scaled data: {accuracy:.4f}")
+y_pred_scaled = knn.predict(X_test_scaled)
+
+print(f"KNN Accuracy with scaled data: {accuracy_score(y_test, y_pred_scaled):.4f}")
 
 # Feature scaling typically improves KNN performance because KNN relies on Euclidean distance;
 # without scaling, features with larger raw magnitudes dominate the distance calculations.
@@ -128,15 +125,15 @@ print(f"\nBest k: {best_k} with score: {best_score:.4f}")
 # Q1: Confusion Matrix for KNN (from Q1: unscaled)
 
 
-cm = confusion_matrix(y_test, y_pred)
+cm = confusion_matrix(y_test, y_pred_unscaled)
+disp = ConfusionMatrixDisplay(
+    confusion_matrix=cm,
+    display_labels=iris.target_names
+)
 
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=iris.target_names)
 disp.plot()
-
-
 plt.savefig("assignments_03/outputs/knn_confusion_matrix.png")
 plt.close()
-
 print("\nConfusion matrix saved to outputs/knn_confusion_matrix.png")
 
 # The model most often confuses versicolor and virginica (if any), as these two 

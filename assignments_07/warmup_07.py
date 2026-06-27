@@ -472,7 +472,7 @@ messages = [
 
 result = run_agent_cycle(
     messages,
-    "Load bike_commute.csv and compute the correlation between avg_traffic_density and avg_speed_kmh."
+    "Load assignments_07/resources/bike_commute.csv and compute the correlation between avg_traffic_density and avg_speed_kmh."
 )
 print("Final Agent Response:")
 print(result)
@@ -544,28 +544,69 @@ print(compute_correlation.description)
 
 
 
-#Q8
+#Q8 
+
+from typing import Dict, Any
+
+@tool
+def load_csv(file_path: str) -> Dict[str, Any]:
+    """
+    Load a CSV file into memory.
+
+    Args:
+        file_path (str): Path to the CSV file to load.
+    """
+    return csv_manager.load_csv(file_path)
+
+
+@tool
+def preview_csv(n: int = 5) -> Dict[str, Any]:
+    """
+    Preview the first rows of the CSV.
+
+    Args:
+        n (int): Number of rows to display.
+    """
+    return csv_manager.preview_csv(n)
+
+@tool
+def summarize_column(column_name: str) -> Dict[str, Any]:
+    """
+    Summarize a numeric column.
+
+    Args:
+        column_name (str): Name of the column to summarize.
+    """
+    return csv_manager.summarize_column(column_name)
 
 # Model
 model = OpenAIServerModel(
-    model_id="gpt-4.1-mini"
+    model_id="gpt-4.1-mini",
+    api_key=api_key
 )
+
+shared_tools = [
+    load_csv,
+    preview_csv,
+    summarize_column,
+    compute_correlation
+]
 
 # ToolCallingAgent
 tool_agent = ToolCallingAgent(
-    tools=[compute_correlation],
+    tools=shared_tools,
     model=model
 )
 
 # CodeAgent
 code_agent = CodeAgent(
-    tools=[compute_correlation],
+    tools=shared_tools,
     model=model
 )
 
 # Prompt
 
-prompt = "Load bike_commute.csv. Plot avg_heart_rate vs duration_min as a scatter plot with green dots."
+prompt = "Load assignments_07/resources/bike_commute.csv. Plot avg_heart_rate vs duration_min as a scatter plot with green dots."
 
 # Run both agents
 
