@@ -214,12 +214,12 @@ for d in depths:
     print("Train Accuracy:", train_acc)
     print("Test Accuracy:", test_acc)
 
-# I choose max_depth=10 because:
+# I choose max_depth=5 because:
 # - It balances bias and variance
 # - Higher depths overfit (train accuracy high, test accuracy drops)
 # - Shallower trees underfit
 
-best_tree = DecisionTreeClassifier(max_depth=10, random_state=42)
+best_tree = DecisionTreeClassifier(max_depth=5, random_state=42)
 
 evaluate_model(
     "Decision Tree (best depth)",
