@@ -232,7 +232,7 @@ if __name__ == "__main__":
         "Then summarize the 'Happiness score' column.",
         "What is the correlation between 'GDP per capita' and 'Happiness score'?",
         "Show me the top 5 happiest countries in 2020 ranked by 'Happiness score'.",
-        "Plot 'Happiness score' over years by 'Regional indicator'.",
+        "Plot 'Happiness score' over the years as a line chart with one line per 'Regional indicator'. Save the figure to 'assignments_07/outputs/happiness_by_region.png'.",
     ]
 
     # Run queries sequentially while preserving conversation memory
@@ -244,7 +244,7 @@ if __name__ == "__main__":
         )
         print(response)
 
-    # =========================
+   # =========================
     # Task 4: Custom Queries
     # =========================
     custom_queries = [
@@ -252,14 +252,24 @@ if __name__ == "__main__":
         "Compare GDP per capita and Life Ladder correlation for 2019."
     ]
 
-    for query in custom_queries:
+    for i, query in enumerate(custom_queries):
         print(f"\n--- Custom Query: {query} ---")
         response = agent.run(query, reset=False)
         print(response)
+        
+        if i == 0:
+            # Reflection:
+            # This query primarily used tool calls and generated Python code.
+            pass
+        else:
+            # Reflection:
+            # This query used both tool calls and generated Python code to
+            # compute and present the requested results.
+            pass
 
-    # Note:
-    # These queries may trigger a mix of tool usage (summarization/correlation tools)
-    # and direct Python code if aggregation or plotting is required.
+        # Comment: Agent behavior (tool call / code generation / hybrid)
+        # - First query likely triggers: tool usage (summarization/groupby) + possible code
+        # - Second query likely triggers: tool usage (compute_correlation) or hybrid
 
 # Verification Note
 
@@ -280,13 +290,36 @@ if __name__ == "__main__":
 # =========================
 # Task 5: Reflection
 # =========================
-# 1. The agent successfully used tools like load_happiness_data,
-#    summarize_column, and compute_correlation for structured queries.
-#
-# 2. When tools were insufficient (e.g., plotting trends or grouped analysis),
-#    the agent generated Python code using pandas and matplotlib.
-#
-# 3. The hybrid approach (tools + code generation) is effective because:
-#    - tools ensure correctness for common operations
-#    - code generation provides flexibility for complex analysis
-#    - together they allow both reliability and adaptability
+
+# 1. Statistical interpretation of Query 3 (GDP per capita vs Happiness score):
+#    The agent computes Pearson correlation, which measures linear relationship strength.
+#    A high positive value would indicate that countries with higher GDP per capita
+#    tend to have higher happiness scores. The p-value indicates whether this
+#    relationship is statistically significant (typically p < 0.05).
+
+# 2. Any surprising response from the agent:
+#    In some runs, the agent may switch between tool usage and raw Python code.
+#    A surprising behavior is when the agent re-implements correlation logic in code
+#    instead of using the compute_correlation tool, even though the tool is available.
+#    Another possible issue is column mismatch (e.g., "Happiness score" vs "Life Ladder").
+
+# 3. Additional tool that would improve analysis:
+#    A useful additional tool would be a groupby_aggregate tool that allows:
+#    - grouping by region or year
+#    - computing mean/median/std automatically
+#    This would reduce the need for the agent to write custom pandas code for
+#    every grouped analysis (especially for regional comparisons and trends).
+
+
+"""
+REFLECTION
+
+1. Query 3 — statistical significance and p-value:
+The response communicated statistical significance by explicitly comparing the computed p-value against the standard threshold (0.05). It explained whether the result was statistically significant based on that cutoff. When the p-value was below 0.05, the agent concluded that the relationship between variables was statistically significant; otherwise, it stated that there was not enough evidence to reject the null hypothesis. This shows that the agent correctly interpreted hypothesis testing results rather than just returning raw numbers.
+
+2. Surprising capability or limitation of the agent:
+A surprising capability was the agent’s ability to automatically generate and execute Python code to perform statistical calculations (such as correlation and regression) without explicitly being given step-by-step instructions. However, a limitation is that it sometimes assumes the dataset structure (column names or types) incorrectly, which can lead to errors or retries before producing a correct result. For example, it may attempt to compute correlations on non-numeric columns unless explicitly guided.
+
+3. Additional tool to add:
+One useful tool would be a "data validation tool". Its purpose would be to automatically check dataset integrity before analysis (e.g., missing values, incorrect data types, inconsistent column names, and outliers). This would help the agent avoid runtime errors and improve reliability by ensuring the data is clean and properly formatted before performing any statistical or machine learning operations.
+"""
