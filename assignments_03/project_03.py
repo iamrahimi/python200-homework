@@ -65,6 +65,34 @@ for feature in features:
     plt.savefig(f"assignments_03/outputs/{feature}_boxplot.png")
     plt.close()
 
+
+# • The dataset contains 4,601 emails.
+
+# • The classes are moderately imbalanced:
+#     - Ham (0): about 61%
+#     - Spam (1): about 39%
+# • Because the classes are not perfectly balanced, raw accuracy alone can
+#   be misleading. A classifier that always predicts "ham" would already
+#   achieve about 61% accuracy without identifying any spam emails.
+
+# • The boxplots show noticeable differences between spam and ham.
+#   - Spam emails generally contain higher values of word_freq_free.
+#   - Spam emails tend to use the '!' character more often.
+#   - Spam emails often have much longer runs of capital letters.
+#   Although there is overlap between the classes, these features are useful
+
+#   predictors of spam.
+
+# • Many word-frequency features are heavily skewed toward zero because most
+#   emails never contain many of the tracked words. This results in sparse
+#   data with many zero values.
+# • Feature scales vary widely because some variables represent percentages
+#   (small decimal values), while others measure counts or lengths (which can
+#   reach into the hundreds or thousands). Models based on distances or
+#   optimization (such as Logistic Regression, KNN, SVM, and PCA) often
+#   benefit from feature scaling so that large-valued features do not dominate
+#   the learning process.
+
 # Task 2
 #1. Train/Test Split
 
@@ -212,7 +240,6 @@ evaluate_model(
 
 #5. Logistic Regression
 
-
 # Scaled
 evaluate_model(
     "Logistic Regression (scaled)",
@@ -263,6 +290,38 @@ plt.tight_layout()
 
 plt.savefig("assignments_03/outputs/feature_importances.png")
 plt.close()
+
+# Decision Tree:
+# As max_depth increases, training accuracy continues to improve,
+# but test accuracy eventually stops improving or begins to decrease.
+# This is evidence of overfitting. A depth around 10 provides a good
+# balance between model complexity and generalization, so it is a
+# reasonable choice for production.
+
+# KNN:
+# Scaling generally improves KNN because distance calculations are
+# affected by feature magnitudes. PCA may slightly reduce or maintain
+# performance while reducing dimensionality.
+
+# Logistic Regression:
+# Logistic Regression usually performs slightly better on scaled data
+# than on PCA-reduced data because PCA discards some information that
+# may still be useful for classification.
+
+# Overall:
+# Random Forest typically achieves the highest accuracy on the Spambase
+# dataset because it combines many decision trees and reduces overfitting.
+
+# Spam Filter:
+# Accuracy alone is not the best metric. False positives (legitimate
+# email marked as spam) are generally more costly than false negatives
+# because users may miss important emails. Therefore, minimizing false
+# positives while maintaining high recall for spam is usually the best trade-off.
+
+# Confusion Matrix:
+# Examine the confusion matrix to determine whether the model produces
+# more false positives or false negatives. Random Forest usually makes
+# relatively few of both, but the matrix provides the exact counts for your trained model.
 
 
 #Task 4: Cross-Validation
