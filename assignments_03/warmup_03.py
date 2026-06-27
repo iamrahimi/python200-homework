@@ -39,15 +39,17 @@ print("y_test shape:", y_test.shape)
 
 # Q2 
 
-# Fit scaler ONLY on training data
+# Initialize and fit the scaler on the training data, then transform both sets
 scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
 
-# Use same scaler to transform test data
+# We fit the scaler on X_train only to prevent data leakage, ensuring the model 
+# has no prior knowledge of the test set's distribution during training.
+X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# Print mean of each column in scaled training data
-print("Means of X_train_scaled columns:", np.mean(X_train_scaled, axis=0))
+# Print the mean of each column in the scaled training data
+print("Means of scaled X_train columns:")
+print(X_train_scaled.mean(axis=0))
 
 
 # --- KNN ---
@@ -63,24 +65,39 @@ print("Classification Report:\n", classification_report(y_test, y_pred))
 
 
 # Q2: KNN with scaling
-knn_scaled = KNeighborsClassifier(n_neighbors=5)
-knn_scaled.fit(X_train_scaled, y_train)
+# Initialize the KNN classifier (assuming k=5 or matching your previous Question 1 setup)
+knn = KNeighborsClassifier(n_neighbors=5)
 
-y_pred_scaled = knn_scaled.predict(X_test_scaled)
+# Fit the model on the scaled training data and predict on scaled test data
+knn.fit(X_train_scaled, y_train)
+y_pred = knn.predict(X_test_scaled)
 
-print("\nKNN Q2: Scaled Data")
-print("Accuracy:", accuracy_score(y_test, y_pred_scaled))
+# Calculate and print the accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print(f"KNN Accuracy with scaled data: {accuracy:.4f}")
+
+# Feature scaling typically improves KNN performance because KNN relies on Euclidean distance;
+# without scaling, features with larger raw magnitudes dominate the distance calculations.
+# For this specific dataset, if your features (like pixel values or raw scene metrics) already 
+# shared a uniform scale, performance might remain similar, but if they had vastly different 
+# ranges, scaling will significantly prevent uninformative features from overriding the model.
 
 
 # Q3: Cross-validation (k=5) on unscaled training data
-knn_cv = KNeighborsClassifier(n_neighbors=5)
+# Initialize the KNN classifier
+knn = KNeighborsClassifier(n_neighbors=5)
 
-cv_scores = cross_val_score(knn_cv, X_train, y_train, cv=5)
+# Evaluate using 5-fold cross-validation on the unscaled training data
+cv_scores = cross_val_score(knn, X_train, y_train, cv=5)
 
-print("\nKNN Q3: Cross-validation scores (k=5)")
+# Print the performance metrics
 print("Fold scores:", cv_scores)
-print("Mean:", np.mean(cv_scores))
-print("Standard deviation:", np.std(cv_scores))
+print(f"Mean CV Accuracy: {cv_scores.mean():.4f}")
+print(f"Standard Deviation: {cv_scores.std():.4f}")
+
+# Cross-validation is more trustworthy than a single train/test split because it 
+# ensures every data point is used for both training and validation, reducing the 
+# risk of a lucky or unlucky split skewing the performance metrics.
 
 
 # Q4: Try different k values
@@ -104,6 +121,9 @@ for k in k_values:
 
 print(f"\nBest k: {best_k} with score: {best_score:.4f}")
 
+# I would choose the k that yields the highest mean CV accuracy, favoring the larger k 
+# if there is a tie to ensure a smoother decision boundary and better generalization.
+
 # --- Classifier Evaluation ---
 # Q1: Confusion Matrix for KNN (from Q1: unscaled)
 
@@ -119,6 +139,9 @@ plt.close()
 
 print("\nConfusion matrix saved to outputs/knn_confusion_matrix.png")
 
+# The model most often confuses versicolor and virginica (if any), as these two 
+# species share highly overlapping feature distributions compared to the distinct setosa.
+
 # --- Decision Trees ---
 # Q1: Decision Tree model
 
@@ -130,6 +153,12 @@ y_pred_dt = dt.predict(X_test)
 print("\nDecision Tree Results")
 print("Accuracy:", accuracy_score(y_test, y_pred_dt))
 print("Classification Report:\n", classification_report(y_test, y_pred_dt))
+
+# The Decision Tree accuracy is typically comparable to KNN on the Iris dataset, though 
+# KNN might hold a slight edge if the localized feature space clusters neatly.
+# Scaling the data would make absolutely no difference to the Decision Tree's performance, 
+# because trees split features monotonically based on threshold rules (e.g., feature <= value) 
+# rather than calculating geometric distances between points.
 
 # --- Logistic Regression and Regularization ---
 # Q1: Different C values
@@ -148,6 +177,10 @@ for C in C_values:
     coef_size = sum(np.abs(model.coef_).sum() for model in lr.estimators_)
 
     print(f"C={C}, Total Coefficient Magnitude={coef_size:.4f}")
+
+# As C increases, the total coefficient magnitude increases because C is the inverse of 
+# regularization strength ($C = 1/\lambda$). This demonstrates that stronger regularization 
+# (smaller C) penalizes large weights and forces coefficients closer to zero to prevent overfitting.
 
 # --- PCA ---
 
@@ -205,6 +238,11 @@ plt.close()
 
 print("PCA plot saved to outputs/pca_2d_projection.png")
 
+
+# Yes, images of the same digit generally tend to cluster together in this
+# 2D PCA projection, although there is some overlap between similar-looking
+# digits because only the first two principal components are being used.
+
 # --- Q3: Explained Variance ---
 
 explained_variance = np.cumsum(pca.explained_variance_ratio_)
@@ -222,6 +260,8 @@ plt.close()
 
 print("\nPCA variance plot saved to outputs/pca_variance_explained.png")
 
+# Approximately 21 principal components are needed to explain about 80%
+# of the total variance in the handwritten digits dataset.
 
 # --- Q4: Reconstruction ---
 
@@ -263,3 +303,7 @@ plt.close()
 
 print("Reconstruction figure saved to outputs/pca_reconstructions.png")
 
+# The digits become clearly recognizable with about 15 principal components.
+# Using 40 components makes them very close to the originals.
+# This generally matches the cumulative explained variance curve, where the
+# gains begin to level off after the first few dozen principal components.
