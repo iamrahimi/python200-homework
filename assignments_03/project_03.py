@@ -219,7 +219,7 @@ for d in depths:
 # - Higher depths overfit (train accuracy high, test accuracy drops)
 # - Shallower trees underfit
 
-best_tree = DecisionTreeClassifier(max_depth=5, random_state=42)
+best_tree = DecisionTreeClassifier(max_depth=10, random_state=42)
 
 evaluate_model(
     "Decision Tree (best depth)",
@@ -294,9 +294,9 @@ plt.close()
 # Decision Tree:
 # As max_depth increases, training accuracy continues to improve,
 # but test accuracy eventually stops improving or begins to decrease.
-# This is evidence of overfitting. A depth around 10 provides a good
-# balance between model complexity and generalization, so it is a
-# reasonable choice for production.
+# This indicates overfitting at higher depths. Based on my results,
+# I chose max_depth=5 because it provides a good balance between
+# model complexity and generalization while avoiding unnecessary overfitting.
 
 # KNN:
 # Scaling generally improves KNN because distance calculations are
@@ -384,31 +384,20 @@ cross_validate_model(
 
 #Task 5: Building a Prediction Pipeline
 
-
 rf_pipeline = Pipeline([
     ("classifier", RandomForestClassifier(n_estimators=100, random_state=42))
 ])
 
 rf_pipeline.fit(X_train, y_train)
-
 y_pred_rf = rf_pipeline.predict(X_test)
 
 print("\nRandom Forest Pipeline")
 print(classification_report(y_test, y_pred_rf))
 
-
-rf_pipeline = Pipeline([
-    ("classifier", RandomForestClassifier(n_estimators=100, random_state=42))
-])
-
-rf_pipeline.fit(X_train, y_train)
-
-y_pred_rf = rf_pipeline.predict(X_test)
-
-print("\nRandom Forest Pipeline")
-print(classification_report(y_test, y_pred_rf))
-
-
+# Random Forest Pipeline:
+# This model does not require scaling or PCA because it is tree-based.
+# It splits data using thresholds, so feature magnitude does not affect performance.
+# This makes it simpler and more robust compared to linear or distance-based models.
 
 lr_pipeline = Pipeline([
     ("scaler", StandardScaler()),
@@ -416,11 +405,14 @@ lr_pipeline = Pipeline([
 ])
 
 lr_pipeline.fit(X_train, y_train)
-
 y_pred_lr = lr_pipeline.predict(X_test)
 
 print("\nLogistic Regression Pipeline (Scaled)")
 print(classification_report(y_test, y_pred_lr))
+
+# Logistic Regression (Scaled):
+# Scaling is required because logistic regression is sensitive to feature magnitude.
+# Without scaling, large-valued features would dominate the model and reduce performance.
 
 lr_pca_pipeline = Pipeline([
     ("scaler", StandardScaler()),
@@ -434,4 +426,9 @@ y_pred_lr_pca = lr_pca_pipeline.predict(X_test)
 
 print("\nLogistic Regression Pipeline (PCA)")
 print(classification_report(y_test, y_pred_lr_pca))
+
+# Logistic Regression (PCA):
+# This pipeline reduces dimensionality before classification.
+# PCA helps remove noise and redundancy, but may also drop useful information.
+# It works best when features are highly correlated.
 
