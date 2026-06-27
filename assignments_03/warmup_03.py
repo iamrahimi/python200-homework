@@ -54,7 +54,6 @@ print(X_train_scaled.mean(axis=0))
 
 # --- KNN ---
 # Q1: KNN without scaling
-# Q1: KNN without scaling
 knn = KNeighborsClassifier(n_neighbors=5)
 knn.fit(X_train, y_train)
 

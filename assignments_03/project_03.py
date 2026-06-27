@@ -34,7 +34,7 @@ df = pd.read_csv("assignments_03/spambase.data", header=None)
 df.columns = columns
 
 print(df.shape)
-df.head()
+print(df.head())
 
 # 2. Basic Exploration
 print("Total emails:", df.shape[0])
