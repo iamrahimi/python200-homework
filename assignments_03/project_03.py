@@ -214,7 +214,7 @@ for d in depths:
     print("Train Accuracy:", train_acc)
     print("Test Accuracy:", test_acc)
 
-# I choose max_depth=5 because:
+# I choose max_depth=10 because:
 # - It balances bias and variance
 # - Higher depths overfit (train accuracy high, test accuracy drops)
 # - Shallower trees underfit
