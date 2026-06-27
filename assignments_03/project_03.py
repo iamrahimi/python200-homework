@@ -183,6 +183,13 @@ evaluate_model(
     X_train, X_test, y_train, y_test
 )
 
+knn_unscaled = KNeighborsClassifier(n_neighbors=5)
+cv_scores_unscaled = cross_val_score(knn_unscaled, X_train, y_train, cv=5)
+print("\nKNN (Unscaled) Cross-Validation")
+print("Fold scores:", cv_scores_unscaled)
+print(f"Mean CV Accuracy: {cv_scores_unscaled.mean():.4f}")
+print(f"Standard Deviation: {cv_scores_unscaled.std():.4f}")
+
 # Scaled
 evaluate_model(
     "KNN (scaled)",
