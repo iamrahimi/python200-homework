@@ -244,7 +244,7 @@ if __name__ == "__main__":
         )
         print(response)
 
-    # =========================
+   # =========================
     # Task 4: Custom Queries
     # =========================
     custom_queries = [
@@ -257,9 +257,9 @@ if __name__ == "__main__":
         response = agent.run(query, reset=False)
         print(response)
 
-    # Note:
-    # These queries may trigger a mix of tool usage (summarization/correlation tools)
-    # and direct Python code if aggregation or plotting is required.
+        # Comment: Agent behavior (tool call / code generation / hybrid)
+        # - First query likely triggers: tool usage (summarization/groupby) + possible code
+        # - Second query likely triggers: tool usage (compute_correlation) or hybrid
 
 # Verification Note
 
@@ -280,13 +280,22 @@ if __name__ == "__main__":
 # =========================
 # Task 5: Reflection
 # =========================
-# 1. The agent successfully used tools like load_happiness_data,
-#    summarize_column, and compute_correlation for structured queries.
-#
-# 2. When tools were insufficient (e.g., plotting trends or grouped analysis),
-#    the agent generated Python code using pandas and matplotlib.
-#
-# 3. The hybrid approach (tools + code generation) is effective because:
-#    - tools ensure correctness for common operations
-#    - code generation provides flexibility for complex analysis
-#    - together they allow both reliability and adaptability
+
+# 1. Statistical interpretation of Query 3 (GDP per capita vs Happiness score):
+#    The agent computes Pearson correlation, which measures linear relationship strength.
+#    A high positive value would indicate that countries with higher GDP per capita
+#    tend to have higher happiness scores. The p-value indicates whether this
+#    relationship is statistically significant (typically p < 0.05).
+
+# 2. Any surprising response from the agent:
+#    In some runs, the agent may switch between tool usage and raw Python code.
+#    A surprising behavior is when the agent re-implements correlation logic in code
+#    instead of using the compute_correlation tool, even though the tool is available.
+#    Another possible issue is column mismatch (e.g., "Happiness score" vs "Life Ladder").
+
+# 3. Additional tool that would improve analysis:
+#    A useful additional tool would be a groupby_aggregate tool that allows:
+#    - grouping by region or year
+#    - computing mean/median/std automatically
+#    This would reduce the need for the agent to write custom pandas code for
+#    every grouped analysis (especially for regional comparisons and trends).
