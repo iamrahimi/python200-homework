@@ -432,3 +432,43 @@ print(classification_report(y_test, y_pred_lr_pca))
 # PCA helps remove noise and redundancy, but may also drop useful information.
 # It works best when features are highly correlated.
 
+
+#
+# Both the Decision Tree and Random Forest highlight similar key features,
+# especially those related to capital_run_length_total, word frequency features,
+# and certain character frequency indicators.
+#
+# The Random Forest is generally more stable and shows a more reliable ranking,
+# while the Decision Tree can be more sensitive to individual splits.
+#
+# Overall, the most important features align well with intuition about spam:
+# - High capital letter usage is a strong spam indicator ("SHOUTING" emails)
+# - Certain word frequencies (like promotional or spam-trigger words) are predictive
+# - Character frequency features (like '!') also help identify spam patterns
+#
+# This confirms that spam emails often differ from ham emails in formatting style
+# and aggressive textual patterns, not just content alone.
+
+
+# Pipeline Structure & Practical Value:
+#
+# The structure of each pipeline reflects the requirements of the model.
+# Tree-based models like Random Forest do not require scaling or PCA,
+# so their pipeline only includes the classifier step.
+#
+# In contrast, Logistic Regression depends on feature magnitude, so
+# scaling is applied before training. In the PCA version, dimensionality
+# reduction is added after scaling to improve efficiency and reduce noise.
+#
+# The order of steps is important because preprocessing must happen
+# before model training, ensuring the model receives correctly transformed data.
+#
+# Using a Pipeline is practically valuable because it:
+# - Prevents data leakage by ensuring preprocessing is learned only from training data
+# - Guarantees consistent transformations during both training and testing
+# - Simplifies deployment by bundling all steps into a single reusable object
+# - Makes the workflow easier to share, reproduce, and maintain
+#
+# Overall, pipelines reduce errors and make machine learning workflows more robust
+# and production-ready.
+
