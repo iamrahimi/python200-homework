@@ -5,7 +5,12 @@ from smolagents import tool
 from scipy.stats import pearsonr
 from smolagents import CodeAgent, OpenAIServerModel
 from dotenv import load_dotenv
- 
+
+# -------------------------
+# Global dataset
+# -------------------------
+df = None
+DATA_PATH = "assignments_01/outputs/merged_happiness.csv"
 
 if load_dotenv():
     print("API key loaded successfully.")
@@ -15,197 +20,145 @@ else:
 # Get API key from environment
 api_key = os.getenv("OPENAI_API_KEY")
 
-# Tool 1: load_happiness_data
 
-# Global dataframe
-df = None
-DATA_PATH = "assignments_01/outputs/merged_happiness.csv"
-
+# -------------------------
+# Tool 1
+# -------------------------
 @tool
-
 def load_happiness_data() -> dict:
     """
     Load the World Happiness dataset into memory.
-    Tries:
-    1. Load pre-merged dataset from DATA_PATH
-    2. If not found, load and merge yearly CSVs from:
-       assignments/resources/happiness_project/
+
+    The function loads a merged dataset from DATA_PATH. If the file does not exist,
+    it loads and merges yearly CSV files from assignments/resources/happiness_project/.
+
+    Stores the final dataset in the global variable `df`.
+
+    Returns:
+        dict: Contains dataset shape and column names.
     """
     global df
 
-    # CASE 1: Load pre-merged file
     if os.path.exists(DATA_PATH):
         df = pd.read_csv(DATA_PATH)
-        return {
-            "shape": df.shape,
-            "columns": list(df.columns)
-        }
-    
-    # CASE 2: Fallback - load yearly CSVs and merge
-    folder_path = "assignments/resources/happiness_project/"
-    all_files = glob.glob(os.path.join(folder_path, "*.csv"))
-    if not all_files:
-        return {
-            "error": "No dataset found in merged path or yearly folder."
-        }
-    yearly_dfs = []
-    for file in all_files:
-        temp_df = pd.read_csv(file)
-        yearly_dfs.append(temp_df)
-    df = pd.concat(yearly_dfs, ignore_index=True)
-    return {
-        "shape": df.shape,
-        "columns": list(df.columns)
-    }
+    else:
+        import glob
+        files = glob.glob("assignments_11/resources/happiness_project/*.csv")
+        dfs = [pd.read_csv(f) for f in files]
+        df = pd.concat(dfs, ignore_index=True)
 
-# Tool 2: summarize_column
+    return {"shape": df.shape, "columns": list(df.columns)}
+
+
+# -------------------------
+# Tool 2
+# -------------------------
 @tool
 def summarize_column(column: str) -> dict:
     """
-    Return descriptive statistics for a single column in the loaded dataset.
+    Return descriptive statistics for a numeric column.
+
     Args:
-        column: Name of the column to summarize.
+        column (str): Column name to summarize.
+
+    Returns:
+        dict: Summary statistics or error message.
     """
     global df
-    # Validate dataset
+
     if df is None:
-        return {"error": "No dataset loaded."}
-    # Validate column
+        return {"error": "Data not loaded"}
+
     if column not in df.columns:
-        return {"error": f"Column '{column}' not found."}
-    try:
-        return df[column].describe().to_dict()
-    except Exception as e:
-        return {"error": str(e)}
-    
-# Tool 3: compute_correlation
+        return {"error": "Column not found"}
+
+    return df[column].describe().to_dict()
+
+
+# -------------------------
+# Tool 3
+# -------------------------
 @tool
 def compute_correlation(col1: str, col2: str) -> dict:
     """
-    Compute the Pearson correlation coefficient and p-value
-    between two numeric columns in the loaded dataset.
+    Compute Pearson correlation and p-value between two numeric columns.
+
     Args:
-        col1: Name of the first numeric column.
-        col2: Name of the second numeric column.
+        col1 (str): First column.
+        col2 (str): Second column.
 
     Returns:
-        A dictionary containing:
-        - col1: first column name
-        - col2: second column name
-        - pearson_r: Pearson correlation coefficient
-        - p_value: statistical p-value
-        Returns {"error": "..."} if:
-        - no dataset is loaded
-        - either column does not exist
-        - correlation computation fails
+        dict: correlation results or error message.
     """
     global df
-    # Validate dataset
+
     if df is None:
-        return {"error": "No dataset loaded."}
-    # Validate columns
+        return {"error": "Data not loaded"}
+
     if col1 not in df.columns or col2 not in df.columns:
-        return {"error": "One or both columns not found."}
-    try:
-        series_1 = df[col1]
-        series_2 = df[col2]
-        r, p = pearsonr(series_1, series_2)
-        return {
-            "col1": col1,
-            "col2": col2,
-            "pearson_r": round(float(r), 4),
-            "p_value": round(float(p), 4)
-        }
-    except Exception as e:
-        return {"error": str(e)}
-    
+        return {"error": "Column not found"}
+
+    clean = df[[col1, col2]].dropna()
+
+    r, p = pearsonr(clean[col1], clean[col2])
+
+    return {
+        "col1": col1,
+        "col2": col2,
+        "pearson_r": round(r, 4),
+        "p_value": round(p, 4),
+    }
 
 
-# Tool 4: get_top_n_countries
+# -------------------------
+# Tool 4
+# -------------------------
 @tool
-
 def get_top_n_countries(column: str, year: int, n: int = 5) -> dict:
     """
-    Return the top N countries ranked by a given column for a specific year.
-    This tool filters the global World Happiness dataset by year,
-    sorts the values of the selected column in descending order,
-    and returns the top N countries.
+    Return top N countries by a column for a specific year.
 
     Args:
-        column: Name of the numeric column to rank (e.g., "Life Ladder").
-        year: Year to filter the dataset by.
-        n: Number of top countries to return (default is 5).
+        column (str): Column to rank by.
+        year (int): Year filter.
+        n (int): Number of results.
 
     Returns:
-        A dictionary containing a list of the top N countries with their values:
-        {
-            "year": int,
-            "column": str,
-            "results": [
-                {"country": str, "value": float},
-                ...
-            ]
-        }
-        Returns {"error": "..."} if:
-        - dataset is not loaded
-        - year or column is invalid
-        - required data is missing
+        dict: Top countries or error message.
     """
     global df
-    # Validate dataset
+
     if df is None:
-        return {"error": "No dataset loaded."}
-    
-    # Validate column
+        return {"error": "Data not loaded"}
+
     if column not in df.columns:
-        return {"error": f"Column '{column}' not found."}
-    
-    # Try to filter year column (assumes dataset has 'year' + 'Country name')
+        return {"error": "Column not found"}
+
     if "year" not in df.columns:
-        return {"error": "No 'year' column found in dataset."}
-    if "Country name" not in df.columns:
-        return {"error": "No 'Country name' column found in dataset."}
-    try:
-        filtered = df[df["year"] == year]
-        if filtered.empty:
-            return {"error": f"No data found for year {year}."}
-        sorted_df = filtered.sort_values(by=column, ascending=False).head(n)
-        results = [
-            {
-                "country": row["Country name"],
-                "value": float(row[column])
-            }
-            for _, row in sorted_df.iterrows()
-        ]
-        return {
-            "year": year,
-            "column": column,
-            "results": results
-        }
-    except Exception as e:
-        return {"error": str(e)}
-    
+        return {"error": "Year column not found"}
 
-# Task 2: Build the Agent
-# Create the model
+    subset = df[df["year"] == year].dropna(subset=[column])
 
+    top = subset.sort_values(column, ascending=False).head(n)
+
+    return top[["country", column]].to_dict(orient="records")
+
+
+# -------------------------
+# Agent setup
+# -------------------------
 model = OpenAIServerModel(
     api_key=api_key,
     model_id="gpt-4o-mini"
 )
 
-# System prompt
 SYSTEM_PROMPT = """
-    You are a data analyst assistant for the World Happiness dataset.
-    Use the available tools for:
-    - loading data
-    - summarizing columns
-    - computing correlations
-    - ranking countries
-    Write Python code only when necessary, and prefer using tools first.
-    Be concise and explain results clearly.
-    """
-# Create the CodeAgent
+You are a data analyst assistant for the World Happiness dataset.
+Use tools for loading, summarizing, correlations, and ranking.
+Write Python code only when tools are insufficient (e.g., plotting).
+Be concise and student-friendly.
+"""
+
 agent = CodeAgent(
     tools=[
         load_happiness_data,
@@ -215,111 +168,61 @@ agent = CodeAgent(
     ],
     model=model,
     instructions=SYSTEM_PROMPT,
-    additional_authorized_imports=[
-        "pandas",
-        "matplotlib.pyplot",
-        "scipy.stats"
-    ],
+    additional_authorized_imports=["pandas", "matplotlib.pyplot", "scipy.stats"],
     max_steps=8,
 )
 
 
-# Task 3: Run Guided Queries
+# -------------------------
+# Task 3 queries
+# -------------------------
+queries = [
+    "Load the happiness data and tell me its shape and column names.",
+    "Summarize the happiness_score column.",
+    "What is the correlation between gdp_per_capita and happiness_score? Is it statistically significant?",
+    "Show me the top 5 happiest countries in 2020.",
+    "Plot happiness_score over the years as a line chart, with one line per region. Save the plot to assignments_07/outputs/happiness_by_region.png.",
+]
+
 if __name__ == "__main__":
 
-    queries = [
-        "Load the happiness data and tell me its shape and column names.",
-        "Then summarize the 'Happiness score' column.",
-        "What is the correlation between 'GDP per capita' and 'Happiness score'?",
-        "Show me the top 5 happiest countries in 2020 ranked by 'Happiness score'.",
-        "Plot 'Happiness score' over the years as a line chart with one line per 'Regional indicator'. Save the figure to 'assignments_07/outputs/happiness_by_region.png'.",
-    ]
-
-    # Run queries sequentially while preserving conversation memory
     for query in queries:
         print(f"\n--- Query: {query} ---")
-        response = agent.run(
-            query,
-            reset=False
-        )
-        print(response)
-
-   # =========================
-    # Task 4: Custom Queries
-    # =========================
-    custom_queries = [
-        "What is the average Happiness score by region?",
-        "Compare GDP per capita and Life Ladder correlation for 2019."
-    ]
-
-    for i, query in enumerate(custom_queries):
-        print(f"\n--- Custom Query: {query} ---")
         response = agent.run(query, reset=False)
         print(response)
-        
-        if i == 0:
-            # Reflection:
-            # This query primarily used tool calls and generated Python code.
-            pass
-        else:
-            # Reflection:
-            # This query used both tool calls and generated Python code to
-            # compute and present the requested results.
-            pass
-
-        # Comment: Agent behavior (tool call / code generation / hybrid)
-        # - First query likely triggers: tool usage (summarization/groupby) + possible code
-        # - Second query likely triggers: tool usage (compute_correlation) or hybrid
-
-# Verification Note
-
-# Query 5 should trigger the CodeAgent to generate
-# custom matplotlib code because no tool exists
-# for creating multi-line regional trend plots.
-#
-# After running, verify that this file exists:
-#
-# assignments_07/outputs/happiness_by_region.png
-#
-# If the file was successfully created, then the
-# agent correctly switched from tool usage to
-# direct Python code generation.
 
 
+    # -------------------------
+    # Task 4 - Custom Queries
+    # -------------------------
 
-# =========================
-# Task 5: Reflection
-# =========================
+    my_query_1 = "Which region has the highest average happiness_score?"
+    response_1 = agent.run(my_query_1, reset=False)
+    print(response_1)
 
-# 1. Statistical interpretation of Query 3 (GDP per capita vs Happiness score):
-#    The agent computes Pearson correlation, which measures linear relationship strength.
-#    A high positive value would indicate that countries with higher GDP per capita
-#    tend to have higher happiness scores. The p-value indicates whether this
-#    relationship is statistically significant (typically p < 0.05).
+    # Comment:
+    # This query triggered tool use and possibly code generation depending on execution.
 
-# 2. Any surprising response from the agent:
-#    In some runs, the agent may switch between tool usage and raw Python code.
-#    A surprising behavior is when the agent re-implements correlation logic in code
-#    instead of using the compute_correlation tool, even though the tool is available.
-#    Another possible issue is column mismatch (e.g., "Happiness score" vs "Life Ladder").
+    my_query_2 = "Plot GDP per capita vs happiness score and show correlation trend."
+    response_2 = agent.run(my_query_2, reset=False)
+    print(response_2)
 
-# 3. Additional tool that would improve analysis:
-#    A useful additional tool would be a groupby_aggregate tool that allows:
-#    - grouping by region or year
-#    - computing mean/median/std automatically
-#    This would reduce the need for the agent to write custom pandas code for
-#    every grouped analysis (especially for regional comparisons and trends).
+    # Comment:
+    # This query triggered code generation because it required visualization.
 
 
+# -------------------------
+# Task 5 - Reflection
+# -------------------------
 """
-REFLECTION
+1. Query 3 communicated statistical significance by comparing the p-value
+   to the threshold of 0.05. If p < 0.05, the result was considered statistically
+   significant; otherwise, it was not.
 
-1. Query 3 — statistical significance and p-value:
-The response communicated statistical significance by explicitly comparing the computed p-value against the standard threshold (0.05). It explained whether the result was statistically significant based on that cutoff. When the p-value was below 0.05, the agent concluded that the relationship between variables was statistically significant; otherwise, it stated that there was not enough evidence to reject the null hypothesis. This shows that the agent correctly interpreted hypothesis testing results rather than just returning raw numbers.
+2. A surprising capability was the agent’s ability to generate and execute Python
+   code for statistical analysis and visualization without explicit instructions.
+   A limitation was occasional incorrect assumptions about column names or types.
 
-2. Surprising capability or limitation of the agent:
-A surprising capability was the agent’s ability to automatically generate and execute Python code to perform statistical calculations (such as correlation and regression) without explicitly being given step-by-step instructions. However, a limitation is that it sometimes assumes the dataset structure (column names or types) incorrectly, which can lead to errors or retries before producing a correct result. For example, it may attempt to compute correlations on non-numeric columns unless explicitly guided.
-
-3. Additional tool to add:
-One useful tool would be a "data validation tool". Its purpose would be to automatically check dataset integrity before analysis (e.g., missing values, incorrect data types, inconsistent column names, and outliers). This would help the agent avoid runtime errors and improve reliability by ensuring the data is clean and properly formatted before performing any statistical or machine learning operations.
+3. A useful additional tool would be a data validation tool to check missing values,
+   incorrect data types, and schema consistency before analysis.
 """
